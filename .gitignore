@@ -1,3 +1,6 @@
 mvenv/
 data/raw
 data/processed
+__pycache__/
+mlruns/
+mlflow.db
