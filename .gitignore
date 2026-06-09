@@ -1,6 +1,5 @@
 mvenv/
-data/raw
-data/processed
+data/
 __pycache__/
 mlruns/
 mlflow.db

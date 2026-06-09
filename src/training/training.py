@@ -69,9 +69,13 @@ def mlflow_logs(best_trial, y_test, y_pred_best):
     mlflow.log_figure(fig, "confusion_matrix.png")
     plt.close(fig)
 
+def mlflow_register_model(model_name,run_id, alias):
+    client = mlflow.tracking.MlflowClient()
+    model_version=mlflow.register_model(model_uri=f"runs:/{run_id}/{model_name}", name=model_name)
+    client.set_registered_model_alias(model_name, alias=alias, version=model_version.version)
 
 
-def select_model(X_train, X_test,y_train,y_test):
+def train_and_log(X_train, X_test,y_train,y_test, model_name='Fraud_Detection_Model'):
     mlflow.set_experiment("Recall_PowerTransformer")
     num_process=Pipeline(steps=[
         ('scaler', PowerTransformer())
@@ -84,7 +88,7 @@ def select_model(X_train, X_test,y_train,y_test):
         def objective(trial):
             return optuna_objective(trial, preprocessor, X_train, y_train, X_test, y_test)
         study = optuna.create_study(direction='maximize')
-        study.optimize(objective, n_trials=50)
+        study.optimize(objective, n_trials=10)
 
         best_trial = study.best_trial
 
@@ -96,8 +100,11 @@ def select_model(X_train, X_test,y_train,y_test):
         best_pipeline.fit(X_train, y_train)
         y_pred_best = best_pipeline.predict(X_test)
         mlflow_logs(best_trial, y_test, y_pred_best)
+        mlflow.sklearn.log_model(best_pipeline, name=model_name)
+    return parent_run.info.run_id
 
-def run_experiment_pipeline():
+def run_experiment_pipeline(model_name):
     data = load_data('data/processed/creditcard_model_preprocessed.csv')
     X_train, X_test, y_train, y_test = train_test_split_data(data, target_column='Class')
-    select_model(X_train, X_test, y_train, y_test)
+    run_id=train_and_log(X_train, X_test, y_train, y_test)
+    mlflow_register_model(model_name=model_name, run_id=run_id, alias='candidate')
