@@ -73,6 +73,7 @@ def mlflow_register_model(model_name,run_id, alias):
     client = mlflow.tracking.MlflowClient()
     model_version=mlflow.register_model(model_uri=f"runs:/{run_id}/{model_name}", name=model_name)
     client.set_registered_model_alias(model_name, alias=alias, version=model_version.version)
+    # print(mlflow.get_tracking_uri())
 
 
 def train_and_log(X_train, X_test,y_train,y_test, model_name='Fraud_Detection_Model'):
