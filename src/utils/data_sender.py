@@ -24,5 +24,5 @@ def send_records(df, target_col, interval=3):
 
 
 if __name__ == "__main__":
-    df = pd.read_csv("twoje_dane.csv") 
+    df = pd.read_csv("data/test_data/creditcard_test.csv") 
     send_records(df, target_col="Class", interval=3)

@@ -21,4 +21,4 @@ def load_prod_model(model_name):
 def predict(model, df):
     prediction = model.predict(df)[0]
     probability = model.predict_proba(df)[0]
-    return int(prediction), float(max(probability))
+    return int(prediction), float(probability[1])

@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from config import MODEL_NAME, DB_CONFIG
+from config import MODEL_NAME, DB_CONFIG, DB_PROD_TABLE
 import pandas as pd
 from inference import load_prod_model, predict as run_inference
 from pydantic import BaseModel
@@ -13,7 +13,7 @@ app = FastAPI()
 @app.on_event("startup")
 def startup():
     global model
-    model = load_prod_model("Fraud_Detection_Model")
+    model = load_prod_model(MODEL_NAME)
 
 
 class PredictRequest(BaseModel):
@@ -28,11 +28,11 @@ def save_to_db(features: dict, prediction: int, true_value: int, probability: fl
             columns = list(features.keys()) + ["prediction", "true_value", "probability"]
             values = list(features.values()) + [prediction, true_value, probability]
 
-            columns_sql = ", ".join(columns)
+            columns_sql = ", ".join(f'"{col}"' for col in columns)
             placeholders = ", ".join(["%s"] * len(values))
 
             query = f"""
-                INSERT INTO predictions ({columns_sql})
+                INSERT INTO {DB_PROD_TABLE} ({columns_sql})
                 VALUES ({placeholders})
                 RETURNING id
             """
