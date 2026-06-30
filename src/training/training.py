@@ -4,18 +4,16 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.preprocessing import QuantileTransformer, PowerTransformer, OneHotEncoder
 from sklearn.metrics import classification_report, ConfusionMatrixDisplay, fbeta_score, f1_score, recall_score, make_scorer, precision_score, accuracy_score
-from sklearn.model_selection import train_test_split, StratifiedKFold, GridSearchCV
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.model_selection import train_test_split
 from sklearn.model_selection import cross_val_score
 from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.base import clone
-from category_encoders import TargetEncoder
 from xgboost import XGBClassifier
-from catboost import CatBoostClassifier
-import lightgbm as lgb
 import optuna
 import mlflow
 import matplotlib.pyplot as plt
+import os
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
 
 def load_data(file_path):
     return pd.read_csv(file_path)
@@ -69,27 +67,26 @@ def mlflow_logs(best_trial, y_test, y_pred_best):
     mlflow.log_figure(fig, "confusion_matrix.png")
     plt.close(fig)
 
-def mlflow_register_model(model_name,run_id, alias):
+def mlflow_register_model(model_name, model_uri, alias):
     client = mlflow.tracking.MlflowClient()
-    model_version=mlflow.register_model(model_uri=f"runs:/{run_id}/{model_name}", name=model_name)
+    model_version = mlflow.register_model(model_uri=model_uri, name=model_name)
     client.set_registered_model_alias(model_name, alias=alias, version=model_version.version)
-    # print(mlflow.get_tracking_uri())
 
 
-def train_and_log(X_train, X_test,y_train,y_test, model_name='Fraud_Detection_Model'):
-    mlflow.set_experiment("Recall_PowerTransformer")
-    num_process=Pipeline(steps=[
+def train_and_log(X_train, X_test, y_train, y_test, model_name='Fraud_Detection_Model'):
+    mlflow.set_experiment("Recall_PowerTransformer_v2")
+    num_process = Pipeline(steps=[
         ('scaler', PowerTransformer())
     ])
 
-    preprocessor=ColumnTransformer(transformers=[
+    preprocessor = ColumnTransformer(transformers=[
         ('numeric', num_process, X_train.select_dtypes(include=np.number).columns.tolist())
     ], remainder='passthrough')
     with mlflow.start_run(run_name="XGBoost_Optuna_Recall") as parent_run:
         def objective(trial):
             return optuna_objective(trial, preprocessor, X_train, y_train, X_test, y_test)
         study = optuna.create_study(direction='maximize')
-        study.optimize(objective, n_trials=10)
+        study.optimize(objective, n_trials=80)
 
         best_trial = study.best_trial
 
@@ -101,11 +98,11 @@ def train_and_log(X_train, X_test,y_train,y_test, model_name='Fraud_Detection_Mo
         best_pipeline.fit(X_train, y_train)
         y_pred_best = best_pipeline.predict(X_test)
         mlflow_logs(best_trial, y_test, y_pred_best)
-        mlflow.sklearn.log_model(best_pipeline, name=model_name)
-    return parent_run.info.run_id
+        model_info = mlflow.sklearn.log_model(best_pipeline, artifact_path=model_name) 
+    return parent_run.info.run_id, model_info.model_uri 
 
 def run_experiment_pipeline(model_name):
     data = load_data('data/processed/creditcard_model_preprocessed.csv')
     X_train, X_test, y_train, y_test = train_test_split_data(data, target_column='Class')
-    run_id=train_and_log(X_train, X_test, y_train, y_test)
-    mlflow_register_model(model_name=model_name, run_id=run_id, alias='candidate')
+    run_id, model_uri = train_and_log(X_train, X_test, y_train, y_test)
+    mlflow_register_model(model_name=model_name, model_uri=model_uri, alias='candidate')

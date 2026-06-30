@@ -1,10 +1,9 @@
 import mlflow
-import sys
 import os
 
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
 
 def load_prod_model(model_name):
-    mlflow.set_tracking_uri("sqlite:///C:/Users/kamil/GitHub/e2e_fraud_detection/mlflow.db")
     client = mlflow.tracking.MlflowClient()
     try:
         prod_version = client.get_model_version_by_alias(model_name, "prod")

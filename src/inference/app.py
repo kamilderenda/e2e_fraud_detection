@@ -1,14 +1,10 @@
 from fastapi import FastAPI
-from config import MODEL_NAME, DB_CONFIG, DB_PROD_TABLE
+from src.inference.config import MODEL_NAME, DB_CONFIG, DB_PROD_TABLE
 import pandas as pd
-from inference import load_prod_model, predict as run_inference
+from src.inference.inference import load_prod_model, predict as run_inference
 from pydantic import BaseModel
 import psycopg2
-import sys
-import os
-# sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 app = FastAPI()
-
 
 @app.on_event("startup")
 def startup():

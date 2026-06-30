@@ -1,0 +1,89 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: fraud_postgres
+    restart: always
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  mlflow:
+    build:
+      context: ./docker/mlflow
+    container_name: fraud_mlflow
+    restart: always
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlflow/data/mlruns
+      - ./mlflow.db:/mlflow/data/mlflow.db
+
+  api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    container_name: fraud_api
+    restart: always
+    environment:
+      - MODEL_NAME=${MODEL_NAME}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./mlruns:/mlflow/data/mlruns
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
+
+  sender:
+    build:
+      context: .
+      dockerfile: docker/sender/Dockerfile
+    container_name: fraud_sender
+    restart: "no"
+    environment:
+      - API_URL=http://api:8000/predict
+      - MODEL_NAME=${MODEL_NAME}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+    depends_on:
+      - api
+  experiment:
+    build:
+      context: .
+      dockerfile: docker/experiment/Dockerfile
+    container_name: fraud_experiment
+    restart: "no"
+    environment:
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ./mlruns:/mlflow/data/mlruns
+      - ./data:/app/data
+    depends_on:
+      mlflow:
+        condition: service_started
+  
+
+volumes:
+  postgres_data:

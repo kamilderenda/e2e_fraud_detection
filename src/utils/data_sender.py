@@ -1,8 +1,9 @@
 import time
 import requests
 import pandas as pd
+from src.inference.config import API_URL
 
-API_URL = "http://localhost:8000/predict"
+
 
 def stream_records(df, target_col, interval=3):
     for record in df.to_dict(orient="records"):

@@ -3,6 +3,8 @@ from dotenv import load_dotenv
 import mlflow
 
 load_dotenv()
+mlflow.set_tracking_uri(os.getenv("MLFLOW_TRACKING_URI", "http://localhost:5000"))
+API_URL = os.getenv("API_URL", "http://localhost:8000/predict")
 
 MODEL_NAME = os.getenv("MODEL_NAME")
 
