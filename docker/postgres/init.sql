@@ -19,3 +19,17 @@ CREATE TABLE IF NOT EXISTS prod_table (
     probability FLOAT,
     created_at TIMESTAMP DEFAULT NOW()
 );
+
+CREATE TABLE IF NOT EXISTS mlflow_experiments (
+    id SERIAL PRIMARY KEY,
+    model_name TEXT,
+    model_uri TEXT,
+    run_id TEXT,
+    alias TEXT,
+    version TEXT,
+    recall FLOAT,
+    precision FLOAT,
+    f1_score FLOAT,
+    accuracy FLOAT,
+    created_at TIMESTAMP DEFAULT NOW()
+);

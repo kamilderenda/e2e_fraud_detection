@@ -25,9 +25,15 @@ services:
     restart: always
     ports:
       - "5000:5000"
+    environment:
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
     volumes:
       - ./mlruns:/mlflow/data/mlruns
-      - ./mlflow.db:/mlflow/data/mlflow.db
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   api:
     build:
@@ -45,8 +51,6 @@ services:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
     ports:
       - "8000:8000"
-    volumes:
-      - ./mlruns:/mlflow/data/mlruns
     depends_on:
       postgres:
         condition: service_healthy
@@ -77,8 +81,12 @@ services:
     restart: "no"
     environment:
       - MLFLOW_TRACKING_URI=http://mlflow:5000
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
     volumes:
-      - ./mlruns:/mlflow/data/mlruns
       - ./data:/app/data
     depends_on:
       mlflow:

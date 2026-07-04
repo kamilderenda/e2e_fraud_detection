@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements_training.txt .
+COPY docker/experiment/requirements_training.txt .
 RUN pip install --no-cache-dir -r requirements_training.txt --break-system-packages || pip install --no-cache-dir -r requirements_training.txt
 
 COPY scripts/ /app/scripts/
