@@ -27,3 +27,6 @@ DB_MLFLOW_CONFIG = {
 }
 
 DB_MLFLOW_TABLE = os.getenv('DB_MLFLOW_TABLE',"mlflow_table")
+
+PREFECT_API_URL=os.getenv("PREFECT_API_URL")
+PREFECT_API_KEY=os.getenv("PREFECT_API_KEY")

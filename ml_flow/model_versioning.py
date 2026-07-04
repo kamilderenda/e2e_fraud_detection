@@ -30,7 +30,7 @@ def log_to_db(model_name, version, run_id, alias, metrics):
 
 def check_candidate(model_name):
     client = mlflow.tracking.MlflowClient()
-
+    alias="candidate"
     try:
         candidate_version = client.get_model_version_by_alias(model_name, "candidate")
     except mlflow.exceptions.MlflowException:
@@ -48,11 +48,13 @@ def check_candidate(model_name):
         if candidate_recall > prod_recall:
             print(f"Promoting candidate v{candidate_version.version} → prod")
             client.set_registered_model_alias(model_name, "prod", candidate_version.version)
+            alias = "prod"
         else:
             print(f"Prod stays (v{prod_version.version}): {prod_recall:.4f} >= {candidate_recall:.4f}")
 
     except mlflow.exceptions.MlflowException:
         print(f"No prod model. Promoting candidate v{candidate_version.version} → prod")
         client.set_registered_model_alias(model_name, "prod", candidate_version.version)
-    return model_name, candidate_version.version, candidate_version.run_id, "prod", candidate_metrics
+        alias = "prod"
+    return model_name, candidate_version.version, candidate_version.run_id, alias, candidate_metrics
 
