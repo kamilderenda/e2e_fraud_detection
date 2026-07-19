@@ -89,7 +89,26 @@ services:
     depends_on:
       mlflow:
         condition: service_started
-  
+  monitoring:
+    build:
+      context: .
+      dockerfile: docker/monitoring/Dockerfile
+    container_name: fraud_monitoring
+    restart: always
+    environment:
+      - MODEL_NAME=${MODEL_NAME}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
+    volumes:
+      - ./mlruns:/mlflow/data/mlruns
+      - ./data:/app/data
+    depends_on:
+      mlflow:
+        condition: service_started
 
 volumes:
   postgres_data:
