@@ -4,6 +4,8 @@ import pandas as pd
 from src.inference.inference import load_prod_model, predict as run_inference
 from pydantic import BaseModel
 import psycopg2
+
+model=None
 app = FastAPI()
 
 @app.on_event("startup")
