@@ -19,6 +19,11 @@ jobs:
         with:
           python-version: '3.11'
       - name: Build and test in docker by docker-compose
+        env:
+          DB_USER: ${{ secrets.DB_USER }}
+          DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+          DB_NAME: ${{ secrets.DB_NAME }}
+          MODEL_NAME: ${{ secrets.MODEL_NAME }}
         run: |
-          docker-compose build api
-          docker-compose run --rm api pytest tests/ -v
+          docker compose build api
+          docker compose run --rm api pytest tests/ -v
