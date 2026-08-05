@@ -1,5 +1,7 @@
 mvenv/
-data/
+data/*
+!data/test_data/
+!data/test_data/creditcard_test.csv
 __pycache__/
 mlruns/
 mlflow.db
