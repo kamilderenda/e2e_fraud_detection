@@ -29,9 +29,38 @@ jobs:
 
       - name: Start postgres and mlflow
         run: docker compose up -d postgres mlflow
+      - name: Wait for postgres and mlflow
+        run: sleep 20
+      - name: Verify postgres
+        run: |
+          docker compose exec -T postgres pg_isready \
+          -U $DB_USER \
+          -d $DB_NAME
+      - name: Verify mlflow
+        run: |
+          curl --fail http://localhost:5000
 
       - name: Start API
         run: docker compose up -d api
+      - name: Wait for API
+        run: sleep 15
+      - name: Verify API container
+        run: |
+          docker compose ps api
+      - name: API smoke test
+        run: |
+          curl --fail http://localhost:8000/docs
 
       - name: Start monitoring and sender
         run: docker compose up -d monitoring sender
+      - name: Wait for sender and monitoring
+        run: sleep 20
+
+      - name: Verify all containers
+        run: |
+          docker compose ps
+
+      - name: Show logs if deployment failed
+        if: failure()
+        run: |
+          docker compose logs
