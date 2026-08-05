@@ -4,4 +4,3 @@ __pycache__/
 mlruns/
 mlflow.db
 .env
-requirements*.txt
