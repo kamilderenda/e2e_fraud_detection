@@ -109,6 +109,8 @@ services:
     depends_on:
       mlflow:
         condition: service_started
+      postgres:
+        condition: service_healthy
   tests:
     build:
       context: .
