@@ -2,9 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY docker/api/requirements.txt .
+COPY docker/tests/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
+COPY tests/ ./tests/
 COPY src/ ./src/
 
 EXPOSE 8000

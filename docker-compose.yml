@@ -109,6 +109,16 @@ services:
     depends_on:
       mlflow:
         condition: service_started
-
+  tests:
+    build:
+      context: .
+      dockerfile: docker/tests/Dockerfile
+    container_name: fraud_tests
+    restart: always
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_started
 volumes:
   postgres_data:

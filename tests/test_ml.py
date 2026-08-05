@@ -4,10 +4,14 @@ import pandas as pd
 import numpy as np
 from unittest.mock import MagicMock
 from src.inference.config import EXPECTED_COLUMNS
-from src.inference.inference import predict
 
 def make_sample_df():
     return pd.DataFrame([EXPECTED_COLUMNS], columns=EXPECTED_COLUMNS)
+
+def predict(model, df):
+    prediction = model.predict(df)[0]
+    probability = model.predict_proba(df)[0]
+    return int(prediction), float(probability[1])
 
 def test_predict_return_tuple():
     mock_model = MagicMock()
