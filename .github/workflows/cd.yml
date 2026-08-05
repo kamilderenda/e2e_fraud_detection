@@ -27,6 +27,11 @@ jobs:
       - name: Build all docker images
         run: docker compose build
 
+      - name: Prepare MLflow storage
+        run: |
+          touch mlflow.db
+          mkdir -p mlruns
+          
       - name: Start postgres and mlflow
         run: docker compose up -d postgres mlflow
       - name: Wait for postgres and mlflow
