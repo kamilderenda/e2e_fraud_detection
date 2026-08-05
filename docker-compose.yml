@@ -114,7 +114,15 @@ services:
       context: .
       dockerfile: docker/tests/Dockerfile
     container_name: fraud_tests
+    environment:
+      - MODEL_NAME=${MODEL_NAME}
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_NAME=${DB_NAME}
+      - DB_USER=${DB_USER}
+      - DB_PASSWORD=${DB_PASSWORD}
+      - MLFLOW_TRACKING_URI=http://mlflow:5000
     restart: always
-    
+
 volumes:
   postgres_data:
