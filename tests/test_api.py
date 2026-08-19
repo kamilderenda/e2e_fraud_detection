@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 from unittest.mock import patch, MagicMock
-from src.inference.config import VALID_FEATURES
+from src.config.config import VALID_FEATURES
 import numpy as np
 
 from src.inference.app import app

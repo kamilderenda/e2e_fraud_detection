@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
 from unittest.mock import MagicMock, patch
-from src.inference.config import EXPECTED_COLUMNS
+from src.config.config import EXPECTED_COLUMNS
 
 
 def make_valid_features():

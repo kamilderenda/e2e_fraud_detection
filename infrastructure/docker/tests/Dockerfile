@@ -2,7 +2,7 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY docker/tests/test_requirements.txt .
+COPY infrastructure/docker/tests/test_requirements.txt .
 RUN pip install --no-cache-dir -r test_requirements.txt
 
 COPY tests/ ./tests/

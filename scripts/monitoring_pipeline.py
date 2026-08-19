@@ -3,7 +3,8 @@ import os
 import time
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from src.monitoring.drift_monitoring import *
+from src.monitoring.data_drift import *
+from src.database.repository import *
 from prefect import flow, task
 
 @task(name="Get_total_rows_from_prod", retries=3, retry_delay_seconds=10)

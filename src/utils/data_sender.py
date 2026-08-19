@@ -1,7 +1,7 @@
 import time
 import requests
 import pandas as pd
-from src.inference.config import API_URL
+from src.config.config import API_URL
 
 
 

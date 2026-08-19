@@ -3,7 +3,7 @@ import pytest
 import pandas as pd
 import numpy as np
 from unittest.mock import MagicMock
-from src.inference.config import EXPECTED_COLUMNS
+from src.config.config import EXPECTED_COLUMNS
 
 def make_sample_df():
     return pd.DataFrame([EXPECTED_COLUMNS], columns=EXPECTED_COLUMNS)

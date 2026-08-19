@@ -1,5 +1,5 @@
 from fastapi import FastAPI
-from src.inference.config import MODEL_NAME, DB_CONFIG, DB_PROD_TABLE
+from src.config.config import MODEL_NAME, DB_CONFIG, DB_PROD_TABLE
 import pandas as pd
 from src.inference.inference import load_prod_model, predict as run_inference
 from pydantic import BaseModel

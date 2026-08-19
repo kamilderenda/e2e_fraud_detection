@@ -1,8 +1,8 @@
 services:
+
   postgres:
     image: postgres:16
     container_name: fraud_postgres
-    restart: always
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
@@ -11,7 +11,7 @@ services:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
       interval: 5s
@@ -19,10 +19,9 @@ services:
       retries: 5
 
   mlflow:
-    build:
-      context: ./docker/mlflow
     container_name: fraud_mlflow
-    restart: always
+    build:
+      context: ./infrastructure/docker/mlflow
     ports:
       - "5000:5000"
     volumes:
@@ -35,19 +34,18 @@ services:
       retries: 5
 
   api:
+    container_name: fraud_api
     build:
       context: .
-      dockerfile: docker/api/Dockerfile
-    container_name: fraud_api
-    restart: always
+      dockerfile: infrastructure/docker/api/Dockerfile
     environment:
-      - MODEL_NAME=${MODEL_NAME}
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      MODEL_NAME: ${MODEL_NAME}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
     ports:
       - "8000:8000"
     volumes:
@@ -56,85 +54,91 @@ services:
       postgres:
         condition: service_healthy
       mlflow:
-        condition: service_started
+        condition: service_healthy
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  sender:
-    build:
-      context: .
-      dockerfile: docker/sender/Dockerfile
-    container_name: fraud_sender
-    restart: "no"
-    environment:
-      - API_URL=http://api:8000/predict
-      - MODEL_NAME=${MODEL_NAME}
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-    depends_on:
-      - api
   experiment:
-    build:
-      context: .
-      dockerfile: docker/experiment/Dockerfile
     container_name: fraud_experiment
-    restart: "no"
-    environment:
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - PREFECT_API_URL=${PREFECT_API_URL}
-      - PREFECT_API_KEY=${PREFECT_API_KEY}
-    volumes:
-      - ./data:/app/data
-    depends_on:
-      mlflow:
-        condition: service_started
-  monitoring:
     build:
       context: .
-      dockerfile: docker/monitoring/Dockerfile
-    container_name: fraud_monitoring
-    restart: always
+      dockerfile: infrastructure/docker/experiment/Dockerfile
     environment:
-      - MODEL_NAME=${MODEL_NAME}
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      PREFECT_API_URL: ${PREFECT_API_URL}
+      PREFECT_API_KEY: ${PREFECT_API_KEY}
     volumes:
-      - ./mlruns:/mlflow/data/mlruns
       - ./data:/app/data
     depends_on:
       mlflow:
-        condition: service_started
+        condition: service_healthy
       postgres:
         condition: service_healthy
-  tests:
+
+  sender:
+    container_name: fraud_sender
     build:
       context: .
-      dockerfile: docker/tests/Dockerfile
-    container_name: fraud_tests
+      dockerfile: infrastructure/docker/sender/Dockerfile
     environment:
-      - MODEL_NAME=${MODEL_NAME}
-      - DB_HOST=postgres
-      - DB_PORT=5432
-      - DB_NAME=${DB_NAME}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - MLFLOW_TRACKING_URI=http://mlflow:5000
-    restart: always
+      API_URL: http://api:8000/predictions/predict
+      MODEL_NAME: ${MODEL_NAME}
+      DB_PORT: 5432
+    depends_on:
+      api:
+        condition: service_healthy
+
+  monitoring:
+    container_name: fraud_monitoring
+    build:
+      context: .
+      dockerfile: infrastructure/docker/monitoring/Dockerfile
+    environment:
+      MODEL_NAME: ${MODEL_NAME}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    volumes:
+      - ./data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
+    restart: "no"
+
+  tests:
+    container_name: fraud_tests
+    build:
+      context: .
+      dockerfile: infrastructure/docker/tests/Dockerfile
+    environment:
+      MODEL_NAME: ${MODEL_NAME}
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: ${DB_NAME}
+      DB_USER: ${DB_USER}
+      DB_PASSWORD: ${DB_PASSWORD}
+      MLFLOW_TRACKING_URI: http://mlflow:5000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      mlflow:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+    restart: "no"
 
 volumes:
   postgres_data:
