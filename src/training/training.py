@@ -86,7 +86,7 @@ def train_and_log(X_train, X_test, y_train, y_test, model_name='Fraud_Detection_
         def objective(trial):
             return optuna_objective(trial, preprocessor, X_train, y_train, X_test, y_test)
         study = optuna.create_study(direction='maximize')
-        study.optimize(objective, n_trials=80)
+        study.optimize(objective, n_trials=10)
 
         best_trial = study.best_trial
 

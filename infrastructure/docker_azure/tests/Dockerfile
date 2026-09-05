@@ -1,0 +1,13 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+COPY infrastructure/docker_azure/tests/test_requirements.txt .
+RUN pip install --no-cache-dir -r test_requirements.txt
+
+COPY tests/ ./tests/
+COPY src/ ./src/
+
+EXPOSE 8000
+
+CMD ["uvicorn", "src.inference.app:app", "--host", "0.0.0.0", "--port", "8000"]
