@@ -15,11 +15,6 @@ def run_experiment_pipeline(model_name):
     run_id, model_uri = train_and_log(X_train, X_test, y_train, y_test)
     mlflow_register_model(model_name=model_name, model_uri=model_uri, alias='candidate')
 
-@task(name="Data Preprocessing", retries=3, retry_delay_seconds=10)
-def preprocessing_task():
-    print("Uruchamianie czyszczenia danych...")
-    run_preprocessing_pipeline()
-
 @task(name='Train and Log Model')
 def train_and_log_task(model_name):
     print(f"Training and logging model: {model_name}")
@@ -36,7 +31,6 @@ def check_candidate_task(model_name):
 
 @flow(name="E2E Fraud Detection Model Pipeline")
 def e2e_fraud_detection_pipeline(model_name):
-    preprocessing_task()
     train_and_log_task(model_name)
     check_candidate_task(model_name)
 
