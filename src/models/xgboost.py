@@ -3,7 +3,6 @@ from xgboost import XGBClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
 
-
 class XGBoostModel(ModelStrategy):
     def __init__(self, preprocessor, **params):
         self.preprocessor = preprocessor

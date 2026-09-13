@@ -1,16 +1,11 @@
 import sys
 import os
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
-
-import numpy as np
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import PowerTransformer
-
 from src.database.repository import log_to_db, load_data
 from src.models.registry import mlflow_register_model
 from src.models.evaluate import check_candidate
-from src.models.base_trainer import XGBoostTrainer
+from src.models.trainer_factory import TrainerFactory
+from src.utils.train_test_split import train_test_split_data
 from prefect import flow, task
 
 
@@ -18,16 +13,19 @@ from prefect import flow, task
 def train_and_log_task(model_name):
     data = load_data('data/processed/creditcard_model_preprocessed.csv')
 
-    trainer = XGBoostTrainer()
-    X_train, X_test, y_train, y_test = trainer.train_test_split(data, target_column='Class')
+    X_train, X_test, y_train, y_test = train_test_split_data(data, target_column='Class')
 
-    num_process = Pipeline(steps=[('scaler', PowerTransformer())])
-    preprocessor = ColumnTransformer(transformers=[
-        ('numeric', num_process, X_train.select_dtypes(include=np.number).columns.tolist())
-    ], remainder='passthrough')
+    trainers = TrainerFactory.create_all()
 
-    run_id, model_uri = trainer.run_process(preprocessor, X_train, y_train, X_test, y_test)
-    mlflow_register_model(model_name=model_name, model_uri=model_uri, alias='candidate')
+    results = []
+    for trainer in trainers:
+        run_id, model_uri, best_score = trainer.run_process(X_train, y_train, X_test, y_test)
+        results.append((best_score, model_uri, run_id))
+        print(f"{trainer.__class__.__name__}: recall={best_score:.4f}, run_id={run_id}")
+
+    best_score, best_uri, best_run_id = max(results, key=lambda x: x[0])
+    print(f"Best model: recall={best_score:.4f}, uri={best_uri}")
+    mlflow_register_model(model_name=model_name, model_uri=best_uri, alias='candidate')
 
 
 @task(name='Check Candidate Model and log to db')

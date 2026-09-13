@@ -2,13 +2,16 @@ from abc import ABC, abstractmethod
 
 class ModelStrategy(ABC):
     @abstractmethod
-    def train(self, data):
-        pass
-
-    @abstractmethod
-    def predict(self, input_data):
+    def train(self, X_train, y_train):
         pass
     
     @abstractmethod
-    def predict_proba(self, input_data):
+    def predict(self, X):
+        pass
+
+    @abstractmethod
+    def predict_proba(self, X):
+        pass
+    @abstractmethod
+    def get_pipeline(self):
         pass

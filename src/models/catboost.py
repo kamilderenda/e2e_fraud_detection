@@ -1,25 +1,25 @@
-from models.base import BaseModel
+from models.base import ModelStrategy
 from catboost import CatBoostClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
 
-class CatBoostModel(BaseModel):
+class CatBoostModel(ModelStrategy):
     def __init__(self,preprocessor, **params):
-        self.model = CatBoostClassifier(**params)
-        self.preprocessor=preprocessor
+        self.preprocessor = preprocessor
+        self.params = params
         self.pipeline = Pipeline(steps=[
             ('preprocessor', clone(self.preprocessor)),
-            ('model', self.model)
+            ('model', CatBoostClassifier(**params))
         ])
-        
+
     def train(self, X_train, y_train):
         self.pipeline.fit(X_train, y_train)
-    
+
     def predict(self, X):
-        return self.model.predict(X)
-    
+        return self.pipeline.predict(X)
+
     def predict_proba(self, X):
-        return self.model.predict_proba(X)
-    
-    def score(self, X, y):
-        return self.model.score(X, y)
+        return self.pipeline.predict_proba(X)
+
+    def get_pipeline(self):
+        return self.pipeline
