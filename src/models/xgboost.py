@@ -1,10 +1,10 @@
-from models.base import BaseModel
+from src.models.base import ModelStrategy
 from xgboost import XGBClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone
 
 
-class XGBoostModel(BaseModel):
+class XGBoostModel(ModelStrategy):
     def __init__(self, preprocessor, **params):
         self.preprocessor = preprocessor
         self.params = params
