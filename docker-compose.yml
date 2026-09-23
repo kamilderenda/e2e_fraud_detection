@@ -28,7 +28,7 @@ services:
       - ./mlruns:/mlflow/data/mlruns
       - ./mlflow.db:/mlflow/data/mlflow.db
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:5000/health')\""]
       interval: 10s
       timeout: 10s
       retries: 10
