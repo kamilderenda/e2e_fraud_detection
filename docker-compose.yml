@@ -89,9 +89,6 @@ services:
       API_URL: http://api:8000/predictions/predict
       MODEL_NAME: ${MODEL_NAME}
       DB_PORT: 5432
-    depends_on:
-      api:
-        condition: service_healthy
 
   monitoring:
     container_name: fraud_monitoring
@@ -128,8 +125,6 @@ services:
       MLFLOW_TRACKING_URI: http://mlflow:5000
     depends_on:
       postgres:
-        condition: service_healthy
-      api:
         condition: service_healthy
     restart: "no"
 
