@@ -6,7 +6,7 @@ End-to-end MLOps pipeline for credit card fraud detection, built on the [Kaggle 
 
 ## Architecture
 
-![System Architecture](images/whole_flow.png)
+![System Architecture](imgs/whole_flow.png)
 
 The system is split into four layers:
 
@@ -14,19 +14,19 @@ The system is split into four layers:
 
 **Inference** — A FastAPI service retrieves the `prod` model from MLflow Model Registry and serves predictions. Every prediction is stored in PostgreSQL for downstream monitoring.
 
-![API Flow](images/api_flow.png)
+![API Flow](imgs/api_flow.png)
 
 **Monitoring** — An Evidently-based service reads prediction records from PostgreSQL and generates data drift and model performance reports.
 
 **CI/CD** — GitHub Actions runs tests and builds Docker images on every push to `main`. Infrastructure is defined as code in Bicep and deployed to Azure.
 
-![CI/CD](images/cicd.png)
+![CI/CD](imgs/cicd.png)
 
 ---
 
 ## ML Pipeline
 
-![Training Flow](images/training.png)
+![Training Flow](imgs/training.png)
 
 The training pipeline is orchestrated by Prefect and consists of two tasks:
 
@@ -41,7 +41,7 @@ The pipeline uses a Strategy + Template Method design pattern — `Trainer` defi
 
 Best run achieved **recall of 0.902** on the test set (90 out of 92 fraud cases detected).
 
-![Confusion Matrix](images/confusion_matrix.png)
+![Confusion Matrix](imgs/confusion_matrix.png)
 
 | Metric | Value |
 |---|---|
@@ -56,11 +56,11 @@ Low precision is expected given extreme class imbalance (1:545) — the model is
 
 ## MLflow Tracking
 
-![MLflow Runs](images/runs_main.png)
+![MLflow Runs](imgs/runs_main.png)
 
-![Example Run](images/example_run.png)
+![Example Run](imgs/example_run.png)
 
-![Model Registry](images/model_registry.png)
+![Model Registry](imgs/model_registry.png)
 
 All experiments are tracked in MLflow with full parameter logging, metrics, confusion matrix artifact, and model versioning. The registry uses `candidate` and `prod` aliases for lifecycle management.
 
