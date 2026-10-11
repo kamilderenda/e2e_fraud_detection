@@ -24,8 +24,15 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Build all docker images
-        run: docker compose build
+      - name: Bicep deployment
+        run: |
+          az login --service-principal -u ${{ secrets.AZURE_CLIENT_ID }} -p ${{ secrets.AZURE_CLIENT_SECRET }} --tenant ${{ secrets.AZURE_TENANT_ID }}
+          az account set --subscription ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          az deployment group create \
+            --resource-group e2e_fraud \
+            --template-file infrastructure/bicep/main.bicep \
+            --parameters infrastructure/bicep/parameters.json \
+            --parameters postgresAdminPassword=${{ secrets.DB_PASSWORD }}
 
       - name: Prepare MLflow storage
         run: |

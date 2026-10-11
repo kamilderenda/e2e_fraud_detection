@@ -49,12 +49,12 @@ resource api 'Microsoft.App/containerApps@2024-03-01' = {
           }
           env: [
             { name: 'MLFLOW_TRACKING_URI', value: mlflowUri }
-            { name: 'DB_HOST',             value: dbHost }
-            { name: 'DB_PORT',             value: '5432' }
-            { name: 'DB_NAME',             value: dbName }
-            { name: 'DB_USER',             value: dbUser }
-            { name: 'DB_PASSWORD',         secretRef: 'db-password' }
-            { name: 'MODEL_NAME',          value: modelName }
+            { name: 'DB_HOST', value: dbHost }
+            { name: 'DB_PORT', value: '5432' }
+            { name: 'DB_NAME', value: dbName }
+            { name: 'DB_USER', value: dbUser }
+            { name: 'DB_PASSWORD', secretRef: 'db-password' }
+            { name: 'MODEL_NAME', value: modelName }
           ]
         }
       ]

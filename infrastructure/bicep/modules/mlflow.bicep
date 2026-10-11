@@ -38,8 +38,8 @@ resource mlflow 'Microsoft.App/containerApps@2024-03-01' = {
         }
       ]
       secrets: [
-        { name: 'acr-password',                  value: acrPassword }
-        { name: 'mlflow-db-uri',                  value: mlflowDbUri }
+        { name: 'acr-password', value: acrPassword }
+        { name: 'mlflow-db-uri', value: mlflowDbUri }
         { name: 'azure-storage-connection-string', value: storageConnectionString }
       ]
     }
@@ -53,9 +53,9 @@ resource mlflow 'Microsoft.App/containerApps@2024-03-01' = {
             memory: '1Gi'
           }
           env: [
-            { name: 'MLFLOW_BACKEND_STORE_URI',        secretRef: 'mlflow-db-uri' }
-            { name: 'AZURE_STORAGE_CONNECTION_STRING',  secretRef: 'azure-storage-connection-string' }
-            { name: 'MLFLOW_ARTIFACT_ROOT',             value: 'wasbs://mlflow@${storageAccountName}.blob.core.windows.net/' }
+            { name: 'MLFLOW_BACKEND_STORE_URI', secretRef: 'mlflow-db-uri' }
+            { name: 'AZURE_STORAGE_CONNECTION_STRING', secretRef: 'azure-storage-connection-string' }
+            { name: 'MLFLOW_ARTIFACT_ROOT', value: 'wasbs://mlflow@${storageAccountName}.blob.core.windows.net/' }
           ]
           probes: [
             {

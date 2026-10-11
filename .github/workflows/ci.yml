@@ -27,3 +27,12 @@ jobs:
         run: |
           docker compose build tests
           docker compose run tests pytest tests/ -v
+      - name: Login, build and push docker images
+        run: | 
+          az acr login--name e2efraudacr
+          docker build -t e2e_fraudacr.azurecr.io/fraud-mlflow:latest infrastructure/docker/mlflow
+          docker build -t e2efraudacr.azurecr.io/fraud-api:latest -f infrastructure/docker_azure/api/Dockerfile .
+          docker build -t e2efraudacr.azurecr.io/fraud-experiment:latest -f infrastructure/docker_azure/experiment/Dockerfile .
+          docker push e2efraudacr.azurecr.io/fraud-mlflow:latest
+          docker push e2efraudacr.azurecr.io/fraud-api:latest
+          docker push e2efraudacr.azurecr.io/fraud-experiment:latest

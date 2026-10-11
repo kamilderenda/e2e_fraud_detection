@@ -1,4 +1,6 @@
+targetScope = 'subscription'
 param location string = 'polandcentral'
+param resourceGroupName string = 'e2e_fraud'
 
 param acrName string = 'e2efraudacr'
 param storageName string = 'e2efraudstorage'
@@ -15,8 +17,14 @@ param postgresClientIp string
 @secure()
 param postgresAdminPassword string
 
-// ── ACR ──────────────────────────────────────────────────────────────────────
+resource rg 'Microsoft.Resources/resourceGroups@2024-03-01' = {
+  name: resourceGroupName
+  location: location
+}
+
+//ACR
 module acr 'modules/acr.bicep' = {
+  scope: rg
   name: 'acr'
   params: {
     name: acrName
@@ -24,8 +32,9 @@ module acr 'modules/acr.bicep' = {
   }
 }
 
-// ── Storage ───────────────────────────────────────────────────────────────────
+//STRG
 module storage 'modules/storage.bicep' = {
+  scope: rg
   name: 'storage'
   params: {
     name: storageName
@@ -33,8 +42,9 @@ module storage 'modules/storage.bicep' = {
   }
 }
 
-// ── Log Analytics ─────────────────────────────────────────────────────────────
+//LOGs
 module logAnalytics 'modules/loganalytics.bicep' = {
+  scope: rg
   name: 'logAnalytics'
   params: {
     name: logAnalyticsName
@@ -42,8 +52,9 @@ module logAnalytics 'modules/loganalytics.bicep' = {
   }
 }
 
-// ── PostgreSQL ────────────────────────────────────────────────────────────────
+//PostgreSQL
 module postgres 'modules/postgres.bicep' = {
+  scope: rg
   name: 'postgres'
   params: {
     name: postgresName
@@ -53,8 +64,9 @@ module postgres 'modules/postgres.bicep' = {
   }
 }
 
-// ── Container Apps Environment ────────────────────────────────────────────────
+//Container Env
 module environment 'modules/environment.bicep' = {
+  scope: rg
   name: 'containerAppsEnvironment'
   params: {
     name: containerAppsEnvironmentName
@@ -64,8 +76,9 @@ module environment 'modules/environment.bicep' = {
   }
 }
 
-// ── MLflow Container App ──────────────────────────────────────────────────────
+//mlflow container
 module mlflow 'modules/mlflow.bicep' = {
+  scope: rg
   name: 'mlflowContainerApp'
   params: {
     name: mlflowContainerAppName
@@ -83,8 +96,9 @@ module mlflow 'modules/mlflow.bicep' = {
   }
 }
 
-// ── API Container App ─────────────────────────────────────────────────────────
+//Api container
 module api 'modules/api.bicep' = {
+  scope: rg
   name: 'apiContainerApp'
   params: {
     name: apiContainerAppName
@@ -102,8 +116,9 @@ module api 'modules/api.bicep' = {
   }
 }
 
-// ── Experiment Job ────────────────────────────────────────────────────────────
+//Experiment job (container)
 module job 'modules/job.bicep' = {
+  scope: rg
   name: 'experimentJob'
   params: {
     name: experimentJobName
@@ -121,7 +136,7 @@ module job 'modules/job.bicep' = {
   }
 }
 
-// ── Outputs ───────────────────────────────────────────────────────────────────
+
 output acrLoginServer string = acr.outputs.loginServer
 output postgresFqdn string = postgres.outputs.fqdn
 output mlflowUrl string = 'https://${mlflow.outputs.fqdn}'
