@@ -1,0 +1,17 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": { "value": "polandcentral" },
+    "acrName": { "value": "e2efraudacr" },
+    "storageName": { "value": "e2efraudstorage" },
+    "logAnalyticsName": { "value": "e2efraud-logs" },
+    "postgresName": { "value": "fraudpostgres" },
+    "containerAppsEnvironmentName": { "value": "e2e-fraud-env" },
+    "apiContainerAppName": { "value": "fraud-api" },
+    "mlflowContainerAppName": { "value": "fraud-mlflow" },
+    "experimentJobName": { "value": "fraud-experiment-job" },
+    "modelName": { "value": "Fraud_Detection_Model" },
+    "postgresClientIp": { "value": "5.172.225.202" }
+  }
+}
