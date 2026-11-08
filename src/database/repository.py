@@ -1,6 +1,8 @@
 import psycopg2
 import pandas as pd
-from src.config.config import DB_MLFLOW_CONFIG, DB_CONFIG, DB_PROD_TABLE
+from src.config.config import DB_MLFLOW_CONFIG, DB_CONFIG, DB_PROD_TABLE, DB_TRAIN_TABLE
+from sqlalchemy import create_engine
+from sqlalchemy.engine import URL
 
 def log_to_db(model_name, version, run_id, alias, metrics):
     conn = psycopg2.connect(**DB_MLFLOW_CONFIG)
@@ -95,3 +97,25 @@ def fetch_production_data(offset: int, limit: int = 100) -> pd.DataFrame:
     df = pd.read_sql_query(query, conn)
     conn.close()
     return df
+
+def save_train_data(data: pd.DataFrame, file_path: str):
+    try:
+        connection_url = URL.create(
+            "postgresql+psycopg2",
+            username=DB_CONFIG["user"],
+            password=DB_CONFIG["password"],
+            host=DB_CONFIG["host"],
+            port=DB_CONFIG["port"],
+            database=DB_CONFIG["dbname"]
+        )
+
+        engine = create_engine(connection_url)
+
+        data.to_sql(
+            DB_TRAIN_TABLE,
+            engine,
+            if_exists="replace",
+            index=False
+        )
+    except Exception as e:
+        print(f"Error saving data: {e}")

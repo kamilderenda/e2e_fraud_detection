@@ -15,6 +15,8 @@ DB_CONFIG = {
 }
 
 DB_PROD_TABLE = os.getenv('DB_PROD_TABLE',"prod_table")
+DB_TRAIN_TABLE = os.getenv('DB_TRAIN_TABLE',"training_data_preprocessed")
+DB_RAW_TABLE = os.getenv('DB_RAW_TABLE',"training_data")
 
 DB_MLFLOW_CONFIG = {
     "host": os.getenv("DB_HOST"),
