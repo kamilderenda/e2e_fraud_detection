@@ -1,132 +1,121 @@
 services:
 
+  # =========================
+  # POSTGRES - AIRFLOW
+  # =========================
+  postgres-airflow:
+    image: postgres:16
+    container_name: postgres-airflow
+    restart: always
+    ports:
+      - "5433:5432"
+    environment:
+      POSTGRES_USER: ${AIRFLOW_DB_USER}
+      POSTGRES_PASSWORD: ${AIRFLOW_DB_PASSWORD}
+      POSTGRES_DB: ${AIRFLOW_DB_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - airflow_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - local-network
+
+  # =========================
+  # POSTGRES - FRAUD APP
+  # =========================
   postgres:
     image: postgres:16
     container_name: fraud_postgres
+    restart: always
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
-    ports:
-      - "5432:5432"
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./infrastructure/docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  mlflow:
-    container_name: fraud_mlflow
-    build:
-      context: ./infrastructure/docker/mlflow
-    ports:
-      - "5000:5000"
-    volumes:
-      - ./mlruns:/mlflow/data/mlruns
-      - ./mlflow.db:/mlflow/data/mlflow.db
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:5000"]
-      interval: 10s
-      timeout: 10s
-      retries: 10
-      start_period: 30s
-
-  api:
-    container_name: fraud_api
-    build:
-      context: .
-      dockerfile: infrastructure/docker/api/Dockerfile
-    environment:
-      MODEL_NAME: ${MODEL_NAME}
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      MLFLOW_TRACKING_URI: http://mlflow:5000
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./mlruns:/mlflow/data/mlruns
-    depends_on:
-      postgres:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/docs"]
       interval: 10s
       timeout: 5s
       retries: 5
+    networks:
+      - local-network
 
-  experiment:
-    container_name: fraud_experiment
-    build:
-      context: .
-      dockerfile: infrastructure/docker/experiment/Dockerfile
+  # =========================
+  # POSTGRES - MLFLOW
+  # =========================
+  postgres-mlflow:
+    image: postgres:16
+    container_name: postgres-mlflow
+    restart: always
+    ports:
+      - "5434:5432"
     environment:
-      MLFLOW_TRACKING_URI: http://mlflow:5000
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      PREFECT_API_URL: ${PREFECT_API_URL}
-      PREFECT_API_KEY: ${PREFECT_API_KEY}
+      POSTGRES_USER: ${MLFLOW_DB_USER}
+      POSTGRES_PASSWORD: ${MLFLOW_DB_PASSWORD}
+      POSTGRES_DB: ${MLFLOW_DB_NAME}
+      PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
-      - ./data:/app/data
-    depends_on:
-      postgres:
-        condition: service_healthy
-
-  sender:
-    container_name: fraud_sender
-    build:
-      context: .
-      dockerfile: infrastructure/docker/sender/Dockerfile
+      - mlflow_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - local-network
+  # --- SCHEDULER ---
+  # Airflow scheduler that runs the tasks.
+  scheduler:
+    image: apache/airflow:2.10.4
+    container_name: airflow-scheduler
+    command: scheduler
+    restart: always
+    ports:
+      - "8081:8081"
     environment:
-      API_URL: http://api:8000/predictions/predict
-      MODEL_NAME: ${MODEL_NAME}
-      DB_PORT: 5432
-
-  monitoring:
-    container_name: fraud_monitoring
-    build:
-      context: .
-      dockerfile: infrastructure/docker/monitoring/Dockerfile
-    environment:
-      MODEL_NAME: ${MODEL_NAME}
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      MLFLOW_TRACKING_URI: http://mlflow:5000
+      - AIRFLOW__CORE__EXECUTOR=SequentialExecutor
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${POSTGRES_AIRFLOW_CONN_URI}
     volumes:
-      - ./data:/app/data
+      - ./pipelines/dags:/opt/airflow/dags
+      - ./include:/opt/airflow/include
+      - ./logs:/opt/airflow/logs
+      - /var/run/docker.sock:/var/run/docker.sock # for DockerOperator
     depends_on:
-      postgres:
+      postgres-airflow:
         condition: service_healthy
-    restart: "no"
-
-  tests:
-    container_name: fraud_tests
-    build:
-      context: .
-      dockerfile: infrastructure/docker/tests/Dockerfile
+      airflow-init:
+        condition: service_completed_successfully
+    networks:
+      - local-network
+    
+  # --- AIRFLOW-INIT ---
+  # This is needed to initialize the airflow, otherwise we encounter error.
+  airflow-init:
+    image: apache/airflow:2.10.4
+    container_name: airflow-init
+    command: bash -c "airflow db migrate && airflow users create --username admin --password admin --firstname admin --lastname admin --role Admin --email admin@test.pl"
     environment:
-      MODEL_NAME: ${MODEL_NAME}
-      DB_HOST: postgres
-      DB_PORT: 5432
-      DB_NAME: ${DB_NAME}
-      DB_USER: ${DB_USER}
-      DB_PASSWORD: ${DB_PASSWORD}
-      MLFLOW_TRACKING_URI: http://mlflow:5000
+      - AIRFLOW__DATABASE__SQL_ALCHEMY_CONN=${POSTGRES_AIRFLOW_CONN_URI}
     depends_on:
-      postgres:
+      postgres-airflow:
         condition: service_healthy
-    restart: "no"
+    networks:
+      - local-network
 
 volumes:
   postgres_data:
+  airflow_pgdata:
+  mlflow_pgdata:
+
+networks:
+  local-network:
+    driver: bridge
