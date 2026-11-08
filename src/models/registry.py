@@ -2,8 +2,6 @@ import mlflow
 import matplotlib.pyplot as plt
 from sklearn.metrics import  ConfusionMatrixDisplay, f1_score, precision_score, accuracy_score
 
-
-
 def get_model_by_alias(model_name: str, alias: str):
     client = mlflow.tracking.MlflowClient()
     return client.get_model_version_by_alias(model_name,alias)

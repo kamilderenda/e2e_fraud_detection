@@ -1,4 +1,4 @@
-from models.base import ModelStrategy
+from src.models.base import ModelStrategy
 from catboost import CatBoostClassifier
 from sklearn.pipeline import Pipeline
 from sklearn.base import clone

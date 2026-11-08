@@ -1,16 +1,12 @@
-import numpy as np
 from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
-from sklearn.preprocessing import QuantileTransformer, PowerTransformer, OneHotEncoder
-from sklearn.metrics import classification_report, ConfusionMatrixDisplay, fbeta_score, f1_score, recall_score, make_scorer, precision_score, accuracy_score
+from sklearn.metrics import recall_score
 from sklearn.model_selection import train_test_split
-from sklearn.model_selection import cross_val_score
-from sklearn.utils.class_weight import compute_sample_weight
 from sklearn.base import clone
 from xgboost import XGBClassifier
-import optuna
-import mlflow
-from src.models.registry import mlflow_logs
+from src.models.trainer_factory import TrainerFactory
+from src.models.registry import mlflow_register_model
+from src.data.ingestion import load_data
+from src.config.config import DB_TRAIN_TABLE
 
 def train_test_split_data(data, target_column, test_size=0.2, random_state=42):
     X = data.drop(columns=[target_column])
@@ -50,30 +46,19 @@ def optuna_objective(trial, preprocessor, X_train, y_train, X_test, y_test):
     recall = fit_model(params, preprocessor, X_train, y_train, X_test, y_test)
     return recall
 
-def train_and_log(X_train, X_test, y_train, y_test, model_name='Fraud_Detection_Model'):
-    mlflow.set_experiment("Recall_PowerTransformer_v2")
-    num_process = Pipeline(steps=[
-        ('scaler', PowerTransformer())
-    ])
+def train_and_log_task(model_name):
+    data = load_data(DB_TRAIN_TABLE)
 
-    preprocessor = ColumnTransformer(transformers=[
-        ('numeric', num_process, X_train.select_dtypes(include=np.number).columns.tolist())
-    ], remainder='passthrough')
-    with mlflow.start_run(run_name="XGBoost_Optuna_Recall") as parent_run:
-        def objective(trial):
-            return optuna_objective(trial, preprocessor, X_train, y_train, X_test, y_test)
-        study = optuna.create_study(direction='maximize')
-        study.optimize(objective, n_trials=80)
+    X_train, X_test, y_train, y_test = train_test_split_data(data=data, target_column='Class')
 
-        best_trial = study.best_trial
+    trainers = TrainerFactory.create_all()
 
-        best_model = XGBClassifier(**best_trial.params, random_state=42, objective='binary:logistic', eval_metric='logloss', verbosity=0, scale_pos_weight=545)
-        best_pipeline = Pipeline(steps=[
-            ('preprocessor', clone(preprocessor)),
-            ('model', best_model)
-        ])
-        best_pipeline.fit(X_train, y_train)
-        y_pred_best = best_pipeline.predict(X_test)
-        mlflow_logs(best_trial, y_test, y_pred_best)
-        model_info = mlflow.sklearn.log_model(best_pipeline, artifact_path=model_name) 
-    return parent_run.info.run_id, model_info.model_uri
+    results = []
+    for trainer in trainers:
+        run_id, model_uri, best_score = trainer.run_process(X_train, y_train, X_test, y_test)
+        results.append((best_score, model_uri, run_id))
+        print(f"{trainer.__class__.__name__}: recall={best_score:.4f}, run_id={run_id}")
+
+    best_score, best_uri, best_run_id = max(results, key=lambda x: x[0])
+    print(f"Best model: recall={best_score:.4f}, uri={best_uri}")
+    mlflow_register_model(model_name=model_name, model_uri=best_uri, alias='candidate')

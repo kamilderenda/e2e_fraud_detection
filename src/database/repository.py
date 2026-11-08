@@ -1,8 +1,8 @@
 import psycopg2
 import pandas as pd
-from src.config.config import DB_MLFLOW_CONFIG, DB_CONFIG, DB_PROD_TABLE, DB_TRAIN_TABLE
 from sqlalchemy import create_engine
 from sqlalchemy.engine import URL
+from src.config.config import DB_MLFLOW_CONFIG, DB_CONFIG, DB_PROD_TABLE, DB_TRAIN_TABLE
 
 def log_to_db(model_name, version, run_id, alias, metrics):
     conn = psycopg2.connect(**DB_MLFLOW_CONFIG)
@@ -49,8 +49,6 @@ def save_to_db(features: dict, prediction: int, true_value: int, probability: fl
     finally:
         conn.close()
         
-def load_data(file_path):
-    return pd.read_csv(file_path)
 
 def get_record_count() -> int:
     conn = psycopg2.connect(**DB_CONFIG)
@@ -96,4 +94,18 @@ def fetch_production_data(offset: int, limit: int = 100) -> pd.DataFrame:
     """
     df = pd.read_sql_query(query, conn)
     conn.close()
+    return df
+
+def load_training_data() -> pd.DataFrame:
+    connection_url = URL.create(
+        "postgresql+psycopg2",
+        username=DB_CONFIG["user"],
+        password=DB_CONFIG["password"],
+        host=DB_CONFIG["host"],
+        port=DB_CONFIG["port"],
+        database=DB_CONFIG["dbname"]
+    )
+    engine = create_engine(connection_url)
+    df= pd.read_sql(f"SELECT * FROM {DB_TRAIN_TABLE}", engine)
+    print(f"Loaded training data with shape: {df.shape}")
     return df

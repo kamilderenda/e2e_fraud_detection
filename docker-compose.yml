@@ -111,6 +111,22 @@ services:
     networks:
       - local-network
 
+  mlflow:
+    container_name: fraud_mlflow
+    build:
+      context: ./infrastructure/docker/mlflow
+    ports:
+      - "5000:5000"
+    volumes:
+      - ./mlruns:/mlflow/data/mlruns
+      - ./mlflow.db:/mlflow/data/mlflow.db
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 10s
+      timeout: 10s
+      retries: 10
+      start_period: 30s
+
 volumes:
   postgres_data:
   airflow_pgdata:
