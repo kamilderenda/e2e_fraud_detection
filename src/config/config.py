@@ -5,6 +5,7 @@ load_dotenv()
 API_URL = os.getenv("API_URL", "http://localhost:8000/predict")
 
 MODEL_NAME = os.getenv("MODEL_NAME")
+DB_TEST_DATA = os.getenv("DB_TEST_DATA", "test_data")
 
 DB_CONFIG = {
     "host": os.getenv("DB_HOST"),

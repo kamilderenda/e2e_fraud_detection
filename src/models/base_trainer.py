@@ -28,10 +28,6 @@ class Trainer(ABC):
     @abstractmethod
     def get_optuna_params(self, trial) -> dict:
         pass
-
-    @abstractmethod
-    def evaluate(self, model, X_test, y_test) -> float:
-        pass
     
     def build_preprocessor(self, X_train):
         num_process = Pipeline(steps=[('scaler', PowerTransformer())])
